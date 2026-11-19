@@ -251,7 +251,8 @@ void Vofa_SendJustFloat(void)
     if ((vofa_motors == NULL) ||
         (vofa_motors->Left == NULL) ||
         (vofa_motors->Right == NULL) ||
-        (vofa_motors->PidSelfTurn == NULL)) {
+        (vofa_motors->PidSelfTurn == NULL) ||
+        (vofa_motors->PidYaw == NULL)) {
         return;
     }
 
@@ -265,7 +266,10 @@ void Vofa_SendJustFloat(void)
         vofa_motors->Right->out,
 
         vofa_motors->PidSelfTurn->error[0],
-        vofa_motors->PidSelfTurn->out
+        vofa_motors->PidSelfTurn->out,
+
+        vofa_motors->PidYaw->error[0],
+        vofa_motors->PidYaw->out
     };
 
     static const uint8_t tail[4] = {

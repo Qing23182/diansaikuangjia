@@ -665,3 +665,26 @@ void LCD_DebugUpdate(Car_t Car)
         }
     }
 }
+
+void LCD_ShowStatusLine(const char *text, uint16_t color)
+{
+    char buf[17];
+
+    if (text == NULL) {
+        return;
+    }
+    (void)snprintf(buf, sizeof(buf), "%-16.16s", text);
+    LCD_ShowString(0U, 112U, (const uint8_t *)buf, color, LCD_BLACK, 16U, 0U);
+}
+
+void LCD_ShowBootStatus(uint8_t imu_err)
+{
+    char buf[17];
+
+    if (imu_err == 0U) {
+        LCD_ShowStatusLine("IMU: OK", LCD_GREEN);
+    } else {
+        (void)snprintf(buf, sizeof(buf), "IMU ERR:0x%02X", (unsigned int)imu_err);
+        LCD_ShowStatusLine(buf, LCD_RED);
+    }
+}

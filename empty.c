@@ -31,6 +31,16 @@ void duty_50hz(void)
     BuzzerDataUpdate(car.buzzer);
     EncoderDataUpdate(car.Motors);
 
+    if ((car.task != NULL) && (car.task->Carstartflag != 0) && (car.task->StartDelayTicks > 0)) {
+        MotorStop(car.Motors);
+        car.task->StartDelayTicks--;
+        if ((car.task->StartDelayTicks == (TASK_START_DELAY_TICKS / 2)) ||
+            (car.task->StartDelayTicks == 0)) {
+            BuzzerBee(car.buzzer);
+        }
+        return;
+    }
+
     if (car.task->TaskFlag == 1) {
         Task1(car);
     } else if (car.task->TaskFlag == 2) {
@@ -44,6 +54,8 @@ void duty_50hz(void)
 
 int main(void)
 {
+    uint8_t imu_err;
+
     SYSCFG_DL_init();
     uart0_init();
     MotorInit(&car.Motors);
@@ -51,13 +63,17 @@ int main(void)
     GraySensorInit(&car.GraySensor_t);
     EncodersInit(car.Motors);
     BeepInit(&car.buzzer);
-    ICM42688_Init();
+    imu_err = ICM42688_Init();
     Task_Init(&car.task);
     IMU_Attitude_Init();
     car.IMU = &IMU_Attitude;
     LCD_Init();
     LCD_Clear(LCD_BLACK);
     LCD_DebugInit();
+    LCD_ShowBootStatus(imu_err);
+    if (imu_err != ICM42688_NO_ERROR) {
+        BuzzerBee(car.buzzer);
+    }
     Time_Init();
 
     while (1) {

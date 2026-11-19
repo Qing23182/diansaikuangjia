@@ -1,6 +1,32 @@
 #include "GraySensor.h"
 
-extern Car_t Car ;
+void GraySensor_RecalcNorm(GraySensor_t* GraySensor)
+{
+	if (GraySensor == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < 8; i++)
+	{
+		if (GraySensor->calibrated_black[i] >= GraySensor->calibrated_white[i])
+		{
+			uint16_t temp = GraySensor->calibrated_white[i];
+			GraySensor->calibrated_white[i] = GraySensor->calibrated_black[i];
+			GraySensor->calibrated_black[i] = temp;
+		}
+
+		if ((GraySensor->calibrated_white[i] == 0 && GraySensor->calibrated_black[i] == 0) ||
+			(GraySensor->calibrated_white[i] == GraySensor->calibrated_black[i]))
+		{
+			GraySensor->normal_factor[i] = 0.0f;
+		}
+		else
+		{
+			float dynamic_range = (float)(GraySensor->calibrated_white[i] - GraySensor->calibrated_black[i]);
+			GraySensor->normal_factor[i] = (float)GraySensor->adc_bits / dynamic_range;
+		}
+	}
+}
 
 
 void GraySensorInit(GraySensor_t** GraySensor)
@@ -53,30 +79,7 @@ void GraySensorInit(GraySensor_t** GraySensor)
 		graysensor.calibrated_black[7] = 2029;   // bit7黑色校准值
 		
 		// 计算归一化系数
-		for(int i = 0; i < 8; i++)
-		{
-			// 确保白值 > 黑值（必要时交换）
-			if(graysensor.calibrated_black[i] >= graysensor.calibrated_white[i])
-			{
-				uint16_t temp = graysensor.calibrated_white[i];
-				graysensor.calibrated_white[i] = graysensor.calibrated_black[i];
-				graysensor.calibrated_black[i] = temp;
-			}
-			
-			// 处理无效校准数据（全黑/全白/相等情况）
-			if ((graysensor.calibrated_white[i] == 0 && graysensor.calibrated_black[i] == 0) ||
-				  (graysensor.calibrated_white[i] == graysensor.calibrated_black[i]))
-			{
-				graysensor.normal_factor[i] = 0.0f;  // 无效通道
-			}
-			else
-			{
-				// 计算动态范围
-				float dynamic_range = (float)(graysensor.calibrated_white[i] - graysensor.calibrated_black[i]);
-				// 计算归一化系数
-				graysensor.normal_factor[i] = (float)graysensor.adc_bits / dynamic_range;
-			}
-		}
+		GraySensor_RecalcNorm(&graysensor);
 }
 // ADC读取灰度传感器值的宏定义
 #define READ_GRAY_ADC() ({ \
@@ -123,6 +126,84 @@ void SET_SELECTOR(uint8_t pin2, uint8_t pin1, uint8_t pin0)
 	if(pin0) DL_GPIO_setPins(GraySensor_PORT,GraySensor_PIN_6_PIN);
 	else DL_GPIO_clearPins(GraySensor_PORT,GraySensor_PIN_6_PIN);
 	delay_us(GRAYSENSOR_MUX_SETTLE_US);
+}
+
+void GraySensor_CalibrateSample(GraySensor_t* GraySensor, uint8_t is_white)
+{
+	uint32_t sum[8] = {0};
+	const uint8_t avg_rounds = 16U;
+
+	if (GraySensor == NULL) {
+		return;
+	}
+
+	for (uint8_t r = 0U; r < avg_rounds; r++) {
+		for (uint8_t ch = 0U; ch < 8U; ch++) {
+			SET_SELECTOR((uint8_t)((ch >> 2U) & 1U),
+						 (uint8_t)((ch >> 1U) & 1U),
+						 (uint8_t)(ch & 1U));
+			sum[ch] += READ_AND_STORE_ADC();
+		}
+		delay_ms(2U);
+	}
+	SET_SELECTOR(0U, 0U, 0U);
+
+	for (uint8_t ch = 0U; ch < 8U; ch++) {
+		uint16_t avg = (uint16_t)(sum[ch] / avg_rounds);
+		if (is_white != 0U) {
+			GraySensor->calibrated_white[ch] = avg;
+		} else {
+			GraySensor->calibrated_black[ch] = avg;
+		}
+	}
+}
+
+void GraySensor_RunCalibration(GraySensor_t* GraySensor, Buzzer_t* buzzer)
+{
+	if (GraySensor == NULL) {
+		return;
+	}
+
+	/* Clear any stale key flags before waiting for user confirmation. */
+	(void)Key_check(0, KEY_FLAG_DOWN | KEY_FLAG_SINGLE);
+	(void)Key_check(3, KEY_FLAG_DOWN | KEY_FLAG_SINGLE);
+
+	/* Step 1: sample white background */
+	LCD_ShowStatusLine("CAL:WHITE K1/K4", LCD_CYAN);
+	BuzzerBee(buzzer);
+	while (1) {
+		BuzzerDataUpdate(buzzer);
+		if (Key_check(3, KEY_FLAG_DOWN)) {
+			LCD_ShowStatusLine("CAL: CANCELLED", LCD_YELLOW);
+			return;
+		}
+		if (Key_check(0, KEY_FLAG_DOWN)) {
+			GraySensor_CalibrateSample(GraySensor, 1U);
+			break;
+		}
+		delay_ms(20U);
+	}
+
+	/* Step 2: sample black line */
+	LCD_ShowStatusLine("CAL:BLACK K1/K4", LCD_CYAN);
+	BuzzerBee(buzzer);
+	while (1) {
+		BuzzerDataUpdate(buzzer);
+		if (Key_check(3, KEY_FLAG_DOWN)) {
+			LCD_ShowStatusLine("CAL: CANCELLED", LCD_YELLOW);
+			return;
+		}
+		if (Key_check(0, KEY_FLAG_DOWN)) {
+			GraySensor_CalibrateSample(GraySensor, 0U);
+			break;
+		}
+		delay_ms(20U);
+	}
+
+	GraySensor_RecalcNorm(GraySensor);
+	GraySensor->last_turn_angle = 0.0f;
+	LCD_ShowStatusLine("CAL: DONE!", LCD_GREEN);
+	BuzzerBee(buzzer);
 }
 
 void GraySensorDataUpdate (GraySensor_t* GraySensor)

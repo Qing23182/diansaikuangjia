@@ -74,5 +74,7 @@ void LCD_ShowFloatNum1(uint16_t x, uint16_t y, float num, uint8_t len, uint16_t 
 void LCD_ShowPicture(uint16_t x, uint16_t y, uint16_t width, uint16_t height, const uint8_t pic[]);
 void LCD_DebugInit(void);
 void LCD_DebugUpdate(Car_t Car);
+void LCD_ShowBootStatus(uint8_t imu_err);
+void LCD_ShowStatusLine(const char *text, uint16_t color);
 
 #endif

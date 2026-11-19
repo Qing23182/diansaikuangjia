@@ -35,7 +35,7 @@ typedef double fp64;                 /* 64 位浮点数 */
 
 
 //vofa定义
-#define VOFA_CHANNEL_COUNT  8
+#define VOFA_CHANNEL_COUNT  10
 #define VOFA_FRAME_TAIL_SIZE 4
 #define VOFA_CMD_FRAME_SIZE 11
 
@@ -275,10 +275,12 @@ typedef struct {
 	int16 TaskState;//阶段标志位
   int16 LastTaskStat;//路径计时
 	int16 LapCount;//圈数
+	int16 StartDelayTicks;//发车倒计时 tick (50Hz)
 	
 	float  AverageSpeed;///平均速度
 	float  Deltayaw;//航向偏差
 	float  Datumyaw;//基准航向角
+	float  StartYaw;//发车初始航向角（固定基准，避免弧线出口误差累积）
   	
 }Task_t;
 	

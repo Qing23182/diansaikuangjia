@@ -38,6 +38,11 @@
 /* 灰度传感器模拟开关切换稳定延时 (us) */
 #define GRAYSENSOR_MUX_SETTLE_US 10U
 
+/* 发车倒计时与里程保护参数 */
+#define TASK_START_DELAY_TICKS   50     /* 50Hz 下 50 ticks = 1.0s 发车延时 */
+#define TASK_BLIND_DIST_CM       15.0f  /* 离点后盲区距离，抑制刚离点时的误检 */
+#define TASK_MAX_LEG_DIST_CM     250.0f /* 单段直线/斜线最大里程保护，防丢线撞墙 */
+
 /* 第一个任务状态 */
 #define TASK1_FLAG              1
 #define TASK1_STATE_IDLE        0

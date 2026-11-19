@@ -179,33 +179,57 @@ void Key_Task_Handle(void)
         return;
     }
 
-    if(Key_check(0, KEY_FLAG_DOWN))
-    {
-			car.task->TaskFlag = 1;
-			car.task->TaskState = 0;
-			car.task->Carstartflag = 1;
-		}
-
-    if(Key_check(1, KEY_FLAG_DOWN))
-    {
-			car.task->TaskFlag = 2;
-			car.task->TaskState = 0;
-			car.task->Carstartflag = 1;
+    /* Any key press while running or counting down triggers immediate E-stop. */
+    if (car.task->Carstartflag != 0) {
+        if (Key_check(0, KEY_FLAG_DOWN) ||
+            Key_check(1, KEY_FLAG_DOWN) ||
+            Key_check(2, KEY_FLAG_DOWN) ||
+            Key_check(3, KEY_FLAG_DOWN)) {
+            car.task->Carstartflag = 0;
+            car.task->StartDelayTicks = 0;
+            car.task->TaskState = 0;
+            MotorStop(car.Motors);
+            BuzzerBee(car.buzzer);
+            LCD_ShowStatusLine("E-STOP!", LCD_RED);
+        }
+        return;
     }
 
-    if(Key_check(2, KEY_FLAG_DOWN))
-    {
-			car.task->TaskFlag = 3;
-			car.task->TaskState = 0;
-			car.task->Carstartflag = 1;
+    /* Long-press Key 1 while idle to run 2-step grayscale calibration. */
+    if (Key_check(0, KEY_FLAG_LONG)) {
+        MotorStop(car.Motors);
+        GraySensor_RunCalibration(car.GraySensor_t, car.buzzer);
+        return;
     }
 
-
-    if(Key_check(3, KEY_FLAG_DOWN))
-    {
-			car.task->TaskFlag = 4;
-			car.task->TaskState = 0;
-			car.task->Carstartflag = 1;
+    if (Key_check(0, KEY_FLAG_SINGLE)) {
+        car.task->TaskFlag = 1;
+        car.task->TaskState = 0;
+        car.task->StartDelayTicks = TASK_START_DELAY_TICKS;
+        car.task->Carstartflag = 1;
+        BuzzerBee(car.buzzer);
+        LCD_ShowStatusLine("T1 ARMING...", LCD_YELLOW);
+    } else if (Key_check(1, KEY_FLAG_SINGLE)) {
+        car.task->TaskFlag = 2;
+        car.task->TaskState = 0;
+        car.task->StartDelayTicks = TASK_START_DELAY_TICKS;
+        car.task->Carstartflag = 1;
+        BuzzerBee(car.buzzer);
+        LCD_ShowStatusLine("T2 ARMING...", LCD_YELLOW);
+    } else if (Key_check(2, KEY_FLAG_SINGLE)) {
+        car.task->TaskFlag = 3;
+        car.task->TaskState = 0;
+        car.task->StartDelayTicks = TASK_START_DELAY_TICKS;
+        car.task->Carstartflag = 1;
+        BuzzerBee(car.buzzer);
+        LCD_ShowStatusLine("T3 ARMING...", LCD_YELLOW);
+    } else if (Key_check(3, KEY_FLAG_SINGLE)) {
+        car.task->TaskFlag = 4;
+        car.task->TaskState = 0;
+        car.task->StartDelayTicks = TASK_START_DELAY_TICKS;
+        car.task->Carstartflag = 1;
+        BuzzerBee(car.buzzer);
+        LCD_ShowStatusLine("T4 ARMING...", LCD_YELLOW);
     }
 }
 
