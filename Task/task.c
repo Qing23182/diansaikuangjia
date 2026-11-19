@@ -22,10 +22,6 @@ void Task1(Car_t Car)
 	{
 		return;
 	}
-	if (Car.buzzer != NULL)
-	{
-		BuzzerDataUpdate(Car.buzzer);
-	}
 	if(Car.task->Carstartflag==0)
 	{
 		MotorStop(Car.Motors);
@@ -37,6 +33,7 @@ void Task1(Car_t Car)
 		PID_clear(Car.Motors->Left);
 		PID_clear(Car.Motors->Right);
 		PID_clear(Car.Motors->PidSelfTurn);
+		PID_clear(Car.Motors->PidYaw);
 		
 		Car.task->AverageSpeed=TASK1_SPEED;
 		Car.task->Datumyaw=IMU_Attitude.YawTotalAngle;
@@ -51,7 +48,7 @@ void Task1(Car_t Car)
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
 		Car.task->Deltayaw = yaw_error;
-		MotorPidCtrl(Car.Motors, yaw_error, TASK1_SPEED);
+		MotorYawPidCtrl(Car.Motors, yaw_error, TASK1_SPEED);
 		MotorDataUpdate(Car.Motors);
 	}
 	else if(Car.task->TaskState==TASK1_STATE_FIND_B)
@@ -62,17 +59,14 @@ void Task1(Car_t Car)
 			Car.task->AverageSpeed = 0;
 			Car.task->Carstartflag = 0;
 			Car.task->TaskState = TASK1_STATE_FINISH;
-			if (Car.buzzer != NULL)
-			{
-				BuzzerBee(Car.buzzer);
-			}
+			BuzzerBee(Car.buzzer);
 
 			led_up();
 			return;
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
 		Car.task->Deltayaw = yaw_error;
-		MotorPidCtrl(Car.Motors, yaw_error, TASK1_SPEED);
+		MotorYawPidCtrl(Car.Motors, yaw_error, TASK1_SPEED);
 		MotorDataUpdate(Car.Motors);
 	}
 	else if(Car.task->TaskState==TASK1_STATE_FINISH)
@@ -89,10 +83,6 @@ void Task2(Car_t Car)
 	if ((Car.task == NULL) || (Car.Motors == NULL) || (Car.GraySensor_t == NULL))
 	{
 		return;
-	}
-	if (Car.buzzer != NULL)
-	{
-		BuzzerDataUpdate(Car.buzzer);
 	}
 	if(Car.task->StTrPreFlag > 0)
     {
@@ -117,6 +107,7 @@ void Task2(Car_t Car)
 			PID_clear(Car.Motors->Left);
 			PID_clear(Car.Motors->Right);
 			PID_clear(Car.Motors->PidSelfTurn);
+			PID_clear(Car.Motors->PidYaw);
 			Car.task->AverageSpeed=TASK2_STRAIGHT_SPEED;
 			Car.task->Datumyaw=IMU_Attitude.YawTotalAngle;
 			Car.task->TaskState=TASK2_STATE_AB_LEAVE_A;
@@ -134,7 +125,7 @@ void Task2(Car_t Car)
         yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
         Car.task->Deltayaw = yaw_error;
 
-        MotorPidCtrl(Car.Motors, yaw_error, TASK2_STRAIGHT_SPEED);
+        MotorYawPidCtrl(Car.Motors, yaw_error, TASK2_STRAIGHT_SPEED);
         MotorDataUpdate(Car.Motors);
 		}
 		else if(Car.task->TaskState==TASK2_STATE_AB_FIND_B)
@@ -144,6 +135,7 @@ void Task2(Car_t Car)
 				BuzzerBee(Car.buzzer);
 				Car.task->StTrPreFlag=TASK2_LED_TICKS;
 				PID_clear(Car.Motors->PidSelfTurn);
+				PID_clear(Car.Motors->PidYaw);
 				Car.task->AverageSpeed = TASK2_TRACE_SPEED;
 				Car.task->LastTaskStat = 0;
 				Car.task->TaskState = TASK2_STATE_BC_TRACE;
@@ -153,7 +145,7 @@ void Task2(Car_t Car)
 			yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
 			Car.task->Deltayaw = yaw_error;
 
-			MotorPidCtrl(Car.Motors, yaw_error, TASK2_STRAIGHT_SPEED);
+			MotorYawPidCtrl(Car.Motors, yaw_error, TASK2_STRAIGHT_SPEED);
 			MotorDataUpdate(Car.Motors);
 			
 		}
@@ -172,6 +164,7 @@ void Task2(Car_t Car)
 					Car.task->LastTaskStat=0;
 					Car.task->TaskState=TASK2_STATE_CD_FIND_D;
 					PID_clear(Car.Motors->PidSelfTurn);
+					PID_clear(Car.Motors->PidYaw);
 					return;
 				}
 				MotorPidCtrl(Car.Motors,0.0f,TASK2_TRACE_SPEED);
@@ -194,6 +187,7 @@ void Task2(Car_t Car)
 				BuzzerBee(Car.buzzer);
 				Car.task->StTrPreFlag=TASK2_LED_TICKS;
 				PID_clear(Car.Motors->PidSelfTurn);
+				PID_clear(Car.Motors->PidYaw);
 				Car.task->AverageSpeed=TASK2_TRACE_SPEED;
 				Car.task->LastTaskStat=0;
 				Car.task->TaskState=TASK2_STATE_DA_TRACE;
@@ -201,7 +195,7 @@ void Task2(Car_t Car)
 			}
 			yaw_error=IMU_Attitude.YawTotalAngle-Car.task->Datumyaw;
 			Car.task->Deltayaw=yaw_error;
-			MotorPidCtrl(Car.Motors,yaw_error,TASK2_STRAIGHT_SPEED);
+			MotorYawPidCtrl(Car.Motors,yaw_error,TASK2_STRAIGHT_SPEED);
 			MotorDataUpdate(Car.Motors);
 		}
 		else if(Car.task->TaskState==TASK2_STATE_DA_TRACE)
@@ -249,10 +243,6 @@ void Task34_Run(Car_t Car,int16 lap)
 	{
 		return;
 	}
-	if (Car.buzzer != NULL)
-	{
-		BuzzerDataUpdate(Car.buzzer);
-	}
 	
 	if(Car.task->StTrPreFlag > 0)
     {
@@ -275,6 +265,7 @@ void Task34_Run(Car_t Car,int16 lap)
 		PID_clear(Car.Motors->Left);
 		PID_clear(Car.Motors->Right);
 		PID_clear(Car.Motors->PidSelfTurn);
+		PID_clear(Car.Motors->PidYaw);
 		Car.task->AverageSpeed=TASK34_STRAIGHT_SPEED;
 		Car.task->Datumyaw=IMU_Attitude.YawTotalAngle+TASK34_START_AC_YAW_OFFSET;
 		Car.task->LapCount=0;
@@ -292,7 +283,7 @@ void Task34_Run(Car_t Car,int16 lap)
 		}
 		yaw_error=IMU_Attitude.YawTotalAngle-Car.task->Datumyaw;
 		Car.task->Deltayaw=yaw_error;
-		MotorPidCtrl(Car.Motors,yaw_error,TASK34_STRAIGHT_SPEED);
+		MotorYawPidCtrl(Car.Motors,yaw_error,TASK34_STRAIGHT_SPEED);
 		MotorDataUpdate(Car.Motors);
 		
 	}
@@ -306,12 +297,13 @@ void Task34_Run(Car_t Car,int16 lap)
 			Car.task->LastTaskStat=0;
 			Car.task->TaskState=TASK34_STATE_CB_TRACE;
 			PID_clear(Car.Motors->PidSelfTurn);
+			PID_clear(Car.Motors->PidYaw);
 			return ;
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
 		Car.task->Deltayaw = yaw_error;
 
-		MotorPidCtrl(Car.Motors, yaw_error, TASK34_STRAIGHT_SPEED);
+		MotorYawPidCtrl(Car.Motors, yaw_error, TASK34_STRAIGHT_SPEED);
 		MotorDataUpdate(Car.Motors);
 	}
 	else if(Car.task->TaskState==TASK34_STATE_CB_TRACE)
@@ -330,6 +322,7 @@ void Task34_Run(Car_t Car,int16 lap)
 				Car.task->TaskState = TASK34_STATE_BD_FIND_D;
 
 				PID_clear(Car.Motors->PidSelfTurn);
+				PID_clear(Car.Motors->PidYaw);
 				return;
 			}
 			MotorPidCtrl(Car.Motors, 0.0f, TASK34_TRACE_SPEED);
@@ -355,12 +348,13 @@ void Task34_Run(Car_t Car,int16 lap)
 			Car.task->LastTaskStat=0;
 			Car.task->StTrPreFlag=TASK34_LED_TICKS;
 			PID_clear(Car.Motors->PidSelfTurn);
+			PID_clear(Car.Motors->PidYaw);
 			return ;
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
 		Car.task->Deltayaw = yaw_error;
 
-		MotorPidCtrl(Car.Motors, yaw_error, TASK34_STRAIGHT_SPEED);
+		MotorYawPidCtrl(Car.Motors, yaw_error, TASK34_STRAIGHT_SPEED);
 		MotorDataUpdate(Car.Motors);
 	}
 	else if(Car.task->TaskState==TASK34_STATE_DA_TRACE)
@@ -388,6 +382,7 @@ void Task34_Run(Car_t Car,int16 lap)
 				Car.task->TaskState = TASK34_STATE_AC_LEAVE_A;
 
 				PID_clear(Car.Motors->PidSelfTurn);
+				PID_clear(Car.Motors->PidYaw);
 				return ;
 			}
 			MotorPidCtrl(Car.Motors, 0.0f, TASK34_TRACE_SPEED);

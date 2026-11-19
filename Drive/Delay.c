@@ -11,9 +11,16 @@ void SysTick_Handler(void)
 
 uint32_t micros(void)
 {
-	uint32_t systick_period=CPUCLK_FREQ/1000;
-	return sysTickUptime*1000+(1000*(systick_period-SysTick->VAL))/systick_period;
-	
+	uint32_t systick_period = CPUCLK_FREQ / 1000U;
+	uint32_t ms;
+	uint32_t val;
+
+	do {
+		ms = sysTickUptime;
+		val = SysTick->VAL;
+	} while (ms != sysTickUptime);
+
+	return ms * 1000U + (1000U * (systick_period - val)) / systick_period;
 }
 
 

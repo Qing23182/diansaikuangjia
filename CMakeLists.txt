@@ -2,18 +2,19 @@ cmake_minimum_required(VERSION 3.23)
 
 project(mspm0g3519_firmware LANGUAGES C)
 
+option(USE_IMU_QEKF "Build optional Kalman filter and QuaternionEKF modules" OFF)
+
 set(FIRMWARE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/empty.c
     ${CMAKE_CURRENT_SOURCE_DIR}/ti_msp_dl_config.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm/imu_attitude.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm/kalman_filter.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm/mahony_filter.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm/QuaternionEKF.c
     ${CMAKE_CURRENT_SOURCE_DIR}/apply/Encoder.c
     ${CMAKE_CURRENT_SOURCE_DIR}/apply/GraySensor.c
     ${CMAKE_CURRENT_SOURCE_DIR}/apply/ICM42688.c
     ${CMAKE_CURRENT_SOURCE_DIR}/apply/MotorControl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/apply/Time.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/apply/vofa.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Drive/Beep.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Drive/Delay.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Drive/EncoderExti.c
@@ -26,6 +27,13 @@ set(FIRMWARE_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Drive/uart.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Task/task.c
 )
+
+if(USE_IMU_QEKF)
+    list(APPEND FIRMWARE_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm/kalman_filter.c
+        ${CMAKE_CURRENT_SOURCE_DIR}/Algorithm/QuaternionEKF.c
+    )
+endif()
 
 # The TI/Keil projects supply startup code and final linker settings. This
 # target compiles all application sources for CMake Tools and IntelliSense.

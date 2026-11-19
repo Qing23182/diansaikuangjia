@@ -26,7 +26,7 @@ void IMU_Attitude_Init(void)
     Axis3f acc;
 
     memset(&IMU_Attitude, 0, sizeof(IMU_Attitude));
-    Mahony_Init(&mahony, IMU_MAHONY_KP, IMU_MAHONY_KI, 0.001f);
+    Mahony_Init(&mahony, IMU_MAHONY_KP, IMU_MAHONY_KI, 0.01f);
 
     ICM42688_Read(&ICM42688);
     acc.x = ICM42688.Accel[0];
@@ -47,8 +47,8 @@ void IMU_Attitude_Update(float dt)
     Axis3f acc;
     float yaw_delta;
 
-    if (dt <= 0.0f || dt > 0.02f) {
-        dt = 0.001f;
+    if (dt <= 0.0f || dt > 0.05f) {
+        dt = 0.01f;
     }
 
     ICM42688_Read(&ICM42688);

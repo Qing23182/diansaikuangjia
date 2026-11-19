@@ -45,7 +45,8 @@ typedef enum {
     VOFA_PID_LEFT  = 'L',//左轮速度环
     VOFA_PID_RIGHT = 'R',//右轮速度环
     VOFA_PID_SPEED = 'S',//左右轮速度环
-    VOFA_PID_TURN  = 'T'//转向环
+    VOFA_PID_TURN  = 'T',//灰度巡线转向环
+    VOFA_PID_YAW   = 'Y' //航向保持转向环
 } VofaPidTarget_t;
 
 typedef enum {
@@ -120,13 +121,14 @@ typedef struct {
 
 /* 电机组结构 */
 typedef struct {
-    Pid_t* PidSelfTurn;
-	  BrushMotor_t* MotorLeft;
-	  BrushMotor_t* MotorRight;
-	  Encoder_t* EncoderLeft;
-	  Encoder_t* EncoderRight;
-	  Pid_t* Left;
-	  Pid_t* Right;
+    Pid_t* PidSelfTurn;                          /* 灰度巡线转向环 PID */
+    Pid_t* PidYaw;                               /* IMU 航向保持 PID */
+    BrushMotor_t* MotorLeft;
+    BrushMotor_t* MotorRight;
+    Encoder_t* EncoderLeft;
+    Encoder_t* EncoderRight;
+    Pid_t* Left;
+    Pid_t* Right;
 } Motors_t;
 
 /* 系统采样时间状态 */
@@ -137,12 +139,11 @@ typedef struct {
     volatile uint16_t period_int;                /* 取整后的采样周期，单位 ms */
 } systime;
 
-/* 串口接收环形队列 */
+/* 串口接收环形队列 (单生产者 ISR / 单消费者主循环无锁结构) */
 typedef struct {
     uint8_t buffer[RING_BUF_SIZE];               /* 队列数据缓存区 */
-    uint16_t head;                               /* 出队读取下标 */
-    uint16_t tail;                               /* 入队写入下标 */
-    uint16_t size;                               /* 当前已缓存字节数 */
+    volatile uint16_t head;                      /* 出队读取下标 */
+    volatile uint16_t tail;                      /* 入队写入下标 */
 } RingQueue_t;
 
 /* 串口数据帧解析状态 */

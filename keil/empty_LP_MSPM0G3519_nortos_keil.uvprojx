@@ -652,12 +652,12 @@
             <File>
               <FileName>vofa.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\..\M0\apply\vofa.c</FilePath>
+              <FilePath>../apply/vofa.c</FilePath>
             </File>
             <File>
               <FileName>vofa.h</FileName>
               <FileType>5</FileType>
-              <FilePath>..\..\M0\apply\vofa.h</FilePath>
+              <FilePath>../apply/vofa.h</FilePath>
             </File>
           </Files>
         </Group>

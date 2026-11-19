@@ -4,10 +4,12 @@
 #include "databyte.h"
 #include "headfile.h"
 
+void uart0_init(void);
 void ring_queue_init(RingQueue_t *q);
 uint8_t ring_queue_is_empty(RingQueue_t *q);
 uint8_t ring_queue_is_full(RingQueue_t *q);
 uint8_t ring_queue_enqueue(RingQueue_t *q, uint8_t data);
+uint8_t ring_queue_dequeue(RingQueue_t *q, uint8_t *data);
 uint16_t ring_queue_get_size(RingQueue_t *q);
 void uart_send_byte(uint8_t ch);
 void uart_send_frame(uint8_t *data, uint8_t len);

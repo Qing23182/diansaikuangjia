@@ -74,6 +74,9 @@ static Pid_t *Vofa_GetPid(uint8_t target)
         case VOFA_PID_TURN:
             return vofa_motors->PidSelfTurn;
 
+        case VOFA_PID_YAW:
+            return vofa_motors->PidYaw;
+
         default:
             return NULL;
     }
@@ -158,16 +161,20 @@ static uint8_t Vofa_ParseCommand(void)
     value = Vofa_BytesToFloat(&vofa_command.packet[5]);
 
     /*
-     * ÅÅ³ı NaN¡¢ÎŞÇîÖµºÍÒì³£Êı¾İ¡£
-     * Èç¹û²»¼ì²é£¬´®¿Ú¸ÉÈÅ¿ÉÄÜÖ±½ÓÆÆ»µ PID¡£
+     * æ’é™¤ NaNã€æ— ç©·å€¼å’Œå¼‚å¸¸æ•°æ®ã€‚
+     * å¦‚æœä¸æ£€æŸ¥ï¼Œä¸²å£å¹²æ‰°å¯èƒ½ç›´æ¥ç ´å PIDã€‚
      */
     if (!isfinite(value) || (value < 0.0f) || (value > 1000.0f)) {
         return 0U;
     }
 
     /*
-     * S ±íÊ¾×óÓÒÂÖËÙ¶È»·Ò»ÆğĞŞ¸Ä¡£
+     * S è¡¨ç¤ºå·¦å³è½®é€Ÿåº¦ç¯ä¸€èµ·ä¿®æ”¹ã€‚
      */
+    if (vofa_motors == NULL) {
+        return 0U;
+    }
+
     if (target == VOFA_PID_SPEED) {
         uint8_t left_ok;
         uint8_t right_ok;
@@ -203,7 +210,7 @@ void Vofa_Task(void)
     }
 
     /*
-     * ÏÈÇå±êÖ¾£¬·ÀÖ¹´¦ÀíÊ±ÖĞ¶ÏÖØ¸´´¥·¢¡£
+     * å…ˆæ¸…æ ‡å¿—ï¼Œé˜²æ­¢å¤„ç†æ—¶ä¸­æ–­é‡å¤è§¦å‘ã€‚
      */
     vofa_command.completion_flag = 0;
 
@@ -222,6 +229,8 @@ void Vofa_Init(Motors_t *motors)
 
     memset(&vofa_command, 0, sizeof(vofa_command));
 
+    DL_UART_Main_clearInterruptStatus(UART_1_INST, DL_UART_MAIN_INTERRUPT_RX);
+    DL_UART_Main_enableInterrupt(UART_1_INST, DL_UART_MAIN_INTERRUPT_RX);
     NVIC_ClearPendingIRQ(UART_1_INST_INT_IRQN);
     NVIC_EnableIRQ(UART_1_INST_INT_IRQN);
 }
@@ -229,6 +238,13 @@ void Vofa_Init(Motors_t *motors)
 void Vofa_SendJustFloat(void)
 {
     uint8_t bytes[4];
+
+    if ((vofa_motors == NULL) ||
+        (vofa_motors->Left == NULL) ||
+        (vofa_motors->Right == NULL) ||
+        (vofa_motors->PidSelfTurn == NULL)) {
+        return;
+    }
 
     float channels[VOFA_CHANNEL_COUNT] = {
         vofa_motors->Left->set,
@@ -255,7 +271,7 @@ void Vofa_SendJustFloat(void)
     Vofa_SendData(tail, sizeof(tail));
 }
 
-//´®¿ÚÖĞ¶Ï
+//ä¸²å£ä¸­æ–­
 void UART_1_INST_IRQHandler(void)
 {
     switch (DL_UART_Main_getPendingInterrupt(UART_1_INST)) {

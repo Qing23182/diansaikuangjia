@@ -50,15 +50,25 @@ uint8_t read_pin(uint8_t n)
 
 uint8_t Key_check(uint8_t n,uint8_t flag)
 {
-	if(Key_Flag[n]&flag)
-	{
-		if(flag!=0x01)
-		{
-			Key_Flag[n]&=~flag;
-		}
-		return 1;
+	uint8_t hit = 0;
+	uint32_t primask;
+
+	if (n >= KEY_COUNT) {
+		return 0;
 	}
-	return 0;
+
+	primask = __get_PRIMASK();
+	__disable_irq();
+	if(Key_Flag[n] & flag)
+	{
+		if(flag != KEY_FLAG_HOLD)
+		{
+			Key_Flag[n] &= (uint8_t)(~flag);
+		}
+		hit = 1;
+	}
+	__set_PRIMASK(primask);
+	return hit;
 }
 
 
@@ -128,12 +138,12 @@ void Key_Tick(void)
 			{
 				if(CurrState[i]==KEY_PRESSED)
 				{
-           Key_Flag[i]|=0x10;
-           S[i]=3;					
+					Key_Flag[i] |= KEY_FLAG_DOUBLE;
+					S[i]=3;
 				}
 				else if(Time[i]==0)
 				{
-					Key_Flag[i]|=0x10;
+					Key_Flag[i] |= KEY_FLAG_SINGLE;
 					S[i]=0;
 				}
 				
@@ -165,36 +175,37 @@ void Key_Tick(void)
 
 void Key_Task_Handle(void)
 {
+    if (car.task == NULL) {
+        return;
+    }
 
-    if(Key_check(0, 0x02))
+    if(Key_check(0, KEY_FLAG_DOWN))
     {
 			car.task->TaskFlag = 1;
 			car.task->TaskState = 0;
 			car.task->Carstartflag = 1;
 		}
 
-    if(Key_check(1, 0x02))
+    if(Key_check(1, KEY_FLAG_DOWN))
     {
 			car.task->TaskFlag = 2;
 			car.task->TaskState = 0;
 			car.task->Carstartflag = 1;
     }
 
-    if(Key_check(2, 0x02))
+    if(Key_check(2, KEY_FLAG_DOWN))
     {
 			car.task->TaskFlag = 3;
 			car.task->TaskState = 0;
 			car.task->Carstartflag = 1;
-			car.task->LapCount=1;
     }
 
 
-    if(Key_check(3, 0x02))
+    if(Key_check(3, KEY_FLAG_DOWN))
     {
 			car.task->TaskFlag = 4;
 			car.task->TaskState = 0;
 			car.task->Carstartflag = 1;
-			car.task->LapCount=4;
     }
 }
 
