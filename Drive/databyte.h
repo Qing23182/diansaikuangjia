@@ -115,7 +115,7 @@ typedef struct {
 	  int ERF;                                   /*编码器读取频率*/
 	  int EL;                                     /*编玛器线数*/
 	  float TR;                                  /*轮胎半径*/	  
-	  int ExpectOutput;
+	  fp32 ExpectOutput;
 	  int Output;
 } BrushMotor_t;
 
@@ -256,6 +256,7 @@ typedef struct
     // 归一化系数
     float normal_factor[8];        // 每个传感器的归一化系数
     uint16_t adc_bits;             // ADC位数对应的满量程值(如12位=4096)
+    float last_turn_angle;         // 上一次有效巡线转向偏差（短暂丢线保持）
 } GraySensor_t;
 	
 //蜂鸣器

@@ -22,6 +22,15 @@ void Task1(Car_t Car)
 	{
 		return;
 	}
+	if (Car.task->StTrPreFlag > 0)
+	{
+		Car.task->StTrPreFlag--;
+		led_drive(TASK2_LED_ON, LED_PORT, LED_PIN_13_PIN);
+	}
+	else
+	{
+		led_drive(TASK2_LED_OFF, LED_PORT, LED_PIN_13_PIN);
+	}
 	if(Car.task->Carstartflag==0)
 	{
 		MotorStop(Car.Motors);
@@ -60,8 +69,7 @@ void Task1(Car_t Car)
 			Car.task->Carstartflag = 0;
 			Car.task->TaskState = TASK1_STATE_FINISH;
 			BuzzerBee(Car.buzzer);
-
-			led_up();
+			Car.task->StTrPreFlag = TASK2_LED_TICKS;
 			return;
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
@@ -136,6 +144,7 @@ void Task2(Car_t Car)
 				Car.task->StTrPreFlag=TASK2_LED_TICKS;
 				PID_clear(Car.Motors->PidSelfTurn);
 				PID_clear(Car.Motors->PidYaw);
+				Car.GraySensor_t->last_turn_angle = 0.0f;
 				Car.task->AverageSpeed = TASK2_TRACE_SPEED;
 				Car.task->LastTaskStat = 0;
 				Car.task->TaskState = TASK2_STATE_BC_TRACE;
@@ -167,7 +176,7 @@ void Task2(Car_t Car)
 					PID_clear(Car.Motors->PidYaw);
 					return;
 				}
-				MotorPidCtrl(Car.Motors,0.0f,TASK2_TRACE_SPEED);
+				MotorPidCtrl(Car.Motors, Car.GraySensor_t->last_turn_angle, TASK2_TRACE_SPEED);
 				MotorDataUpdate(Car.Motors);
 			}
 			else 
@@ -188,6 +197,7 @@ void Task2(Car_t Car)
 				Car.task->StTrPreFlag=TASK2_LED_TICKS;
 				PID_clear(Car.Motors->PidSelfTurn);
 				PID_clear(Car.Motors->PidYaw);
+				Car.GraySensor_t->last_turn_angle = 0.0f;
 				Car.task->AverageSpeed=TASK2_TRACE_SPEED;
 				Car.task->LastTaskStat=0;
 				Car.task->TaskState=TASK2_STATE_DA_TRACE;
@@ -214,7 +224,7 @@ void Task2(Car_t Car)
 					Car.task->StTrPreFlag=TASK2_LED_TICKS;
 					return ;
 				}
-				MotorPidCtrl(Car.Motors, 0.0f, TASK2_TRACE_SPEED);
+				MotorPidCtrl(Car.Motors, Car.GraySensor_t->last_turn_angle, TASK2_TRACE_SPEED);
 				MotorDataUpdate(Car.Motors);
 				
 			}
@@ -298,6 +308,7 @@ void Task34_Run(Car_t Car,int16 lap)
 			Car.task->TaskState=TASK34_STATE_CB_TRACE;
 			PID_clear(Car.Motors->PidSelfTurn);
 			PID_clear(Car.Motors->PidYaw);
+			Car.GraySensor_t->last_turn_angle = 0.0f;
 			return ;
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
@@ -325,7 +336,8 @@ void Task34_Run(Car_t Car,int16 lap)
 				PID_clear(Car.Motors->PidYaw);
 				return;
 			}
-			MotorPidCtrl(Car.Motors, 0.0f, TASK34_TRACE_SPEED);
+			turn_angle = TASK34_CB_TRACE_SIGN * Car.GraySensor_t->last_turn_angle;
+			MotorPidCtrl(Car.Motors, turn_angle, TASK34_TRACE_SPEED);
 			MotorDataUpdate(Car.Motors);
 		}
 		else
@@ -349,6 +361,7 @@ void Task34_Run(Car_t Car,int16 lap)
 			Car.task->StTrPreFlag=TASK34_LED_TICKS;
 			PID_clear(Car.Motors->PidSelfTurn);
 			PID_clear(Car.Motors->PidYaw);
+			Car.GraySensor_t->last_turn_angle = 0.0f;
 			return ;
 		}
 		yaw_error = IMU_Attitude.YawTotalAngle - Car.task->Datumyaw;
@@ -385,7 +398,8 @@ void Task34_Run(Car_t Car,int16 lap)
 				PID_clear(Car.Motors->PidYaw);
 				return ;
 			}
-			MotorPidCtrl(Car.Motors, 0.0f, TASK34_TRACE_SPEED);
+			turn_angle = TASK34_DA_TRACE_SIGN * Car.GraySensor_t->last_turn_angle;
+			MotorPidCtrl(Car.Motors, turn_angle, TASK34_TRACE_SPEED);
 			MotorDataUpdate(Car.Motors);
 			
 		}

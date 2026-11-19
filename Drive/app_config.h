@@ -33,6 +33,10 @@
 #define EncoderReadingFrequency 50.0f
 #define EncoderLines            390.0f
 #define TireRadius              6.5f
+#define ENCODER_VEL_LPF_ALPHA   0.4f
+
+/* 灰度传感器模拟开关切换稳定延时 (us) */
+#define GRAYSENSOR_MUX_SETTLE_US 10U
 
 /* 第一个任务状态 */
 #define TASK1_FLAG              1

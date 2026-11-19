@@ -30,7 +30,15 @@ static void Mahony_RotationMatrixUpdate(Mahony_t *mahony)
 
 void Mahony_Output(Mahony_t *mahony)
 {
-    mahony->pitch = -asinf(mahony->rMat[2][0]);
+    float sin_pitch = -mahony->rMat[2][0];
+
+    if (sin_pitch > 1.0f) {
+        sin_pitch = 1.0f;
+    } else if (sin_pitch < -1.0f) {
+        sin_pitch = -1.0f;
+    }
+
+    mahony->pitch = asinf(sin_pitch);
     mahony->roll = atan2f(mahony->rMat[2][1], mahony->rMat[2][2]);
     mahony->yaw = atan2f(mahony->rMat[1][0], mahony->rMat[0][0]);
 }

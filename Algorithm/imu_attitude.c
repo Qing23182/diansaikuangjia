@@ -9,6 +9,12 @@
 IMU_Attitude_t IMU_Attitude;
 static Mahony_t mahony;
 static float yaw_last;
+static uint8_t static_bias_enable = 1U;
+
+void IMU_Attitude_SetStaticBiasEnable(uint8_t enable)
+{
+    static_bias_enable = (enable != 0U) ? 1U : 0U;
+}
 
 static float wrap_pi(float angle)
 {
@@ -52,7 +58,9 @@ void IMU_Attitude_Update(float dt)
     }
 
     ICM42688_Read(&ICM42688);
-    ICM42688_UpdateStaticGyroBias(IMU_STATIC_BIAS_ALPHA);
+    if (static_bias_enable != 0U) {
+        ICM42688_UpdateStaticGyroBias(IMU_STATIC_BIAS_ALPHA);
+    }
 
     gyro.x = ICM42688.Gyro[0];
     gyro.y = ICM42688.Gyro[1];

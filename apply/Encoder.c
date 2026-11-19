@@ -44,8 +44,12 @@ void EncoderDataUpdate(Motors_t* Motor)
 	float temp=(EncoderReadingFrequency*2.0f*PI)/
 		(EncoderLines*ENCODER_QEI_MULTIPLIER);
 	
-	Motor->EncoderLeft->vel=(Motor->EncoderLeft->v_int*temp)*0.2+Motor->EncoderLeft->vel*0.8;
-	Motor->EncoderRight->vel=(Motor->EncoderRight->v_int*temp)*0.2+Motor->EncoderRight->vel*0.8;
+	Motor->EncoderLeft->vel =
+		((float)Motor->EncoderLeft->v_int * temp) * ENCODER_VEL_LPF_ALPHA +
+		Motor->EncoderLeft->vel * (1.0f - ENCODER_VEL_LPF_ALPHA);
+	Motor->EncoderRight->vel =
+		((float)Motor->EncoderRight->v_int * temp) * ENCODER_VEL_LPF_ALPHA +
+		Motor->EncoderRight->vel * (1.0f - ENCODER_VEL_LPF_ALPHA);
 	
 	Motor->EncoderLeft->V=Motor->EncoderLeft->vel*TireRadius;
 	Motor->EncoderRight->V=Motor->EncoderRight->vel*TireRadius;

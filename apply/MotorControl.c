@@ -13,7 +13,7 @@ void BrushMotorInit (BrushMotor_t* BrushMotor , int ERF , int EL , float TR)
 	BrushMotor->ERF= ERF;
 	BrushMotor->EL=  EL;
 	BrushMotor->TR=  TR;
-	BrushMotor->ExpectOutput = 0;
+	BrushMotor->ExpectOutput = 0.0f;
 	BrushMotor->Output = 0;
 }
 
@@ -67,8 +67,8 @@ void MotorStop(Motors_t* Motors)
 	if (Motors == NULL) {
 		return;
 	}
-	Motors->MotorLeft->ExpectOutput=0;
-	Motors->MotorRight->ExpectOutput=0;
+	Motors->MotorLeft->ExpectOutput=0.0f;
+	Motors->MotorRight->ExpectOutput=0.0f;
 	Motors->MotorLeft->Output=0;
 	Motors->MotorRight->Output=0;
 	PID_clear(Motors->Left);

@@ -3,7 +3,10 @@
 
 VofaCommand_t vofa_command;
 volatile uint8_t vofa_rx_index;
+static volatile uint32_t vofa_last_rx_ms;
 static Motors_t *vofa_motors;
+
+#define VOFA_RX_FRAME_TIMEOUT_MS 20U
 
 
 void Vofa_SendByte(uint8_t data)
@@ -38,8 +41,14 @@ static void Vofa_FloatToBytes(float value, uint8_t data[4])
 
 void Vofa_UartReceiveByte(uint8_t byte)
 {
-  
-    if (vofa_rx_index == 0) {
+    uint32_t now_ms = get_systick_ms();
+
+    if ((vofa_rx_index > 0U) && ((now_ms - vofa_last_rx_ms) > VOFA_RX_FRAME_TIMEOUT_MS)) {
+        vofa_rx_index = 0U;
+    }
+    vofa_last_rx_ms = now_ms;
+
+    if (vofa_rx_index == 0U) {
         if (byte != '@') {
             return;
         }

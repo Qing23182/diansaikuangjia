@@ -30,6 +30,7 @@ void GraySensorInit(GraySensor_t** GraySensor)
 		
 		// 设置ADC位数对应的满量程值（12位ADC）
 		graysensor.adc_bits = 4096;
+		graysensor.last_turn_angle = 0.0f;
 		
 		// 手动设置校准数据 - 白色值（传感器在白色表面上的ADC读数）
 		graysensor.calibrated_white[0] = 3234;  // bit0白色校准值
@@ -113,11 +114,6 @@ void GraySensorInit(GraySensor_t** GraySensor)
 //    (pin0) ? DL_GPIO_setPins(GraySensor_PORT,GraySensor_PIN_0_PIN) : DL_GPIO_clearPins(GraySensor_PORT, GraySensor_PIN_0_PIN); \
 //} while(0)
 
-#define DELAY_CYCLES(cycles) do { \
-    volatile uint32_t delay_count = (cycles); \
-    while(delay_count--); \
-} while(0)
-
 void SET_SELECTOR(uint8_t pin2, uint8_t pin1, uint8_t pin0)
 {
 	if(pin2) DL_GPIO_setPins(GraySensor_PORT,GraySensor_PIN_8_PIN);
@@ -126,6 +122,7 @@ void SET_SELECTOR(uint8_t pin2, uint8_t pin1, uint8_t pin0)
 	else DL_GPIO_clearPins(GraySensor_PORT,GraySensor_PIN_7_PIN);
 	if(pin0) DL_GPIO_setPins(GraySensor_PORT,GraySensor_PIN_6_PIN);
 	else DL_GPIO_clearPins(GraySensor_PORT,GraySensor_PIN_6_PIN);
+	delay_us(GRAYSENSOR_MUX_SETTLE_US);
 }
 
 void GraySensorDataUpdate (GraySensor_t* GraySensor)
@@ -260,20 +257,18 @@ float GraySensorToTurnAngle(GraySensor_t* GraySensor)
         }
     }
     
-    // 如果没有检测到任何黑线，返回0（直行）
+    // 如果短暂未检测到任何黑线，保持上一次有效转向方向，避免弯道直接直行冲出
     if(lineCount == 0)
     {
-        return 0.0f;
+        return GraySensor->last_turn_angle;
     }
     
     // 计算平均位置偏差
     float positionError = weightedSum / totalWeight;
     
     // 根据检测到的传感器数量和位置偏差计算转向角度
-    float turnAngle = 0.0f;
-    
-
-    turnAngle = positionError * 10.0f;
+    float turnAngle = positionError * 10.0f;
+    GraySensor->last_turn_angle = turnAngle;
         
     return turnAngle;
 

@@ -22,6 +22,7 @@ void duty_100hz(void)
 
     dt = (float)(now_tick - last_tick) * 0.000001f;
     last_tick = now_tick;
+    IMU_Attitude_SetStaticBiasEnable((car.task == NULL) || (car.task->Carstartflag == 0));
     IMU_Attitude_Update(dt);
 }
 
